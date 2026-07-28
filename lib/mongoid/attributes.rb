@@ -168,13 +168,13 @@ module Mongoid
 
     # Lazily allocate demongoized cache to avoid document initialization overhead.
     #
-    # @return [ Hash | nil ] The cache map when caching is enabled.
+    # @return [ Concurrent::Map | nil ] The cache map when caching is enabled.
     #
     # @api private
     def demongoized_cache
       return unless Mongoid::Config.cache_attribute_values?
 
-      @__demongoized_cache ||= {}
+      @__demongoized_cache ||= Concurrent::Map.new
     end
     private :demongoized_cache
 

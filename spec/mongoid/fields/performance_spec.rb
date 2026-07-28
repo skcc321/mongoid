@@ -549,7 +549,8 @@ describe 'Mongoid::Fields performance optimizations' do
 
     context 'thread safety' do
       it 'handles concurrent field access safely' do
-        band = Band.new(name: 'Test Band', rating: 8.5)
+        updated = Time.current
+        band = Band.new(name: 'Test Band', rating: 8.5, updated: updated)
         errors = Concurrent::Array.new
         results = Concurrent::Array.new
 
@@ -558,7 +559,7 @@ describe 'Mongoid::Fields performance optimizations' do
             100.times do
               name = band.name
               rating = band.rating
-              results << [ name, rating ]
+              results << [ name, rating, band.updated ]
             rescue StandardError => e
               errors << e
             end
@@ -567,11 +568,13 @@ describe 'Mongoid::Fields performance optimizations' do
 
         threads.each(&:join)
         expect(errors).to be_empty
+        expect(band.instance_variable_get(:@__demongoized_cache)).to be_a(Concurrent::Map)
 
         # Verify all threads read correct values
-        results.each do |name, rating|
+        results.each do |name, rating, result_updated|
           expect(name).to eq('Test Band')
           expect(rating).to eq(8.5)
+          expect(result_updated).to eq(updated)
         end
       end
 
